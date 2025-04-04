@@ -1,5 +1,4 @@
-
-import { CargoItem, Container, Zone, ActionLog, Astronaut, SimulationState } from '@/types';
+import { CargoItem, Container, Zone, ActionLog, Astronaut, SimulationState, PlacementRecommendation, RetrievalInstruction, RearrangementPlan, WasteDisposalPlan } from '@/types';
 
 // Helper to generate random IDs
 const generateId = () => Math.random().toString(36).substring(2, 10);

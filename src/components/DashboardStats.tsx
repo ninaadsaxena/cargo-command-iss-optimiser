@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { SimulationState } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Boxes, Calendar, GaugeCircle, BadgeAlert, ScissorsSquare } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface DashboardStatsProps {
   state: SimulationState;
