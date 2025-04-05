@@ -1,68 +1,39 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe } from 'lucide-react';
 import { supplyLocations } from '@/data/supplyLocations';
 import LocationDetails from '@/components/globe/LocationDetails';
-import GlobeVisualization from '@/components/globe/GlobeVisualization';
-import RotationControl from '@/components/globe/RotationControl';
 import { SupplyLocation } from '@/types';
+import { World } from '@/components/ui/globe';
 
 const SupplyLocationsGlobe = () => {
   const [activeLocation, setActiveLocation] = useState<string>('ksc');
-  const [rotating, setRotating] = useState<boolean>(true);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [lngOffset, setLngOffset] = useState<number>(0);
-  const dragStartRef = useRef<{ x: number, startLngOffset: number } | null>(null);
   
-  // SVG view parameters
-  const width = 400;
-  const height = 300;
-  
-  // Auto rotation effect
-  useEffect(() => {
-    if (!rotating || isDragging) return;
-    
-    const interval = setInterval(() => {
-      setLngOffset((prev) => (prev + 1) % 360);
-    }, 200);
-    
-    return () => clearInterval(interval);
-  }, [rotating, isDragging]);
-  
-  // Mouse event handlers for interactive rotation
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isDragging) return;
-    setIsDragging(true);
-    dragStartRef.current = { 
-      x: e.clientX, 
-      startLngOffset: lngOffset 
-    };
+  const globeConfig = {
+    pointSize: 4,
+    globeColor: "#062056",
+    showAtmosphere: true,
+    atmosphereColor: "#FFFFFF",
+    atmosphereAltitude: 0.1,
+    emissive: "#062056",
+    emissiveIntensity: 0.1,
+    shininess: 0.9,
+    polygonColor: "rgba(255,255,255,0.7)",
+    ambientLight: "#38bdf8",
+    directionalLeftLight: "#ffffff",
+    directionalTopLight: "#ffffff",
+    pointLight: "#ffffff",
+    arcTime: 1000,
+    arcLength: 0.9,
+    rings: 1,
+    maxRings: 3,
+    initialPosition: { lat: 22.3193, lng: 114.1694 },
+    autoRotate: true,
+    autoRotateSpeed: 0.5,
   };
   
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStartRef.current) return;
-    
-    const deltaX = e.clientX - dragStartRef.current.x;
-    const newOffset = (dragStartRef.current.startLngOffset - deltaX / 2) % 360;
-    setLngOffset(newOffset);
-  };
-  
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    dragStartRef.current = null;
-  };
-  
-  const handleMouseLeave = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      dragStartRef.current = null;
-    }
-  };
-  
-  const toggleRotation = () => {
-    setRotating(!rotating);
-  };
+  // Generate arcs based on supply locations
+  const arcs = generateArcsFromLocations(supplyLocations);
   
   const activeLocationData = supplyLocations.find(loc => loc.id === activeLocation);
   
@@ -71,30 +42,11 @@ const SupplyLocationsGlobe = () => {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">Supply Launch Locations</CardTitle>
-          <div className="flex gap-2">
-            <RotationControl 
-              rotating={rotating} 
-              onToggleRotation={toggleRotation}
-            />
-          </div>
         </div>
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="relative flex justify-center">
-          <GlobeVisualization 
-            width={width}
-            height={height}
-            lngOffset={lngOffset}
-            activeLocation={activeLocation}
-            locations={supplyLocations}
-            rotating={rotating}
-            isDragging={isDragging}
-            onLocationSelect={setActiveLocation}
-            onStartDrag={handleMouseDown}
-            onDrag={handleMouseMove}
-            onEndDrag={handleMouseUp}
-            onLeaveDrag={handleMouseLeave}
-          />
+        <div className="relative w-full h-[300px] overflow-hidden">
+          <World data={arcs} globeConfig={globeConfig} />
         </div>
         
         {/* Location details for the currently active supply location */}
@@ -105,5 +57,32 @@ const SupplyLocationsGlobe = () => {
     </Card>
   );
 };
+
+// Function to generate arcs between supply locations
+function generateArcsFromLocations(locations: SupplyLocation[]) {
+  const colors = ["#06b6d4", "#3b82f6", "#6366f1"];
+  const arcs = [];
+  
+  // Generate connections between active locations
+  const activeLocations = locations.filter(loc => loc.active);
+  
+  for (let i = 0; i < activeLocations.length; i++) {
+    for (let j = i + 1; j < activeLocations.length; j++) {
+      if (Math.random() > 0.3) { // Only create some connections, not all
+        arcs.push({
+          order: Math.floor(Math.random() * 5) + 1,
+          startLat: activeLocations[i].coordinates[0],
+          startLng: activeLocations[i].coordinates[1],
+          endLat: activeLocations[j].coordinates[0],
+          endLng: activeLocations[j].coordinates[1],
+          arcAlt: Math.random() * 0.3 + 0.1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        });
+      }
+    }
+  }
+  
+  return arcs;
+}
 
 export default SupplyLocationsGlobe;
