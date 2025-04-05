@@ -234,44 +234,62 @@ const SupplyLocationsGlobe = () => {
             onMouseLeave={handleMouseLeave}
             style={isDragging ? { cursor: 'grabbing' } : {}}
           >
-            {/* Globe background */}
+            {/* Earth globe background with realistic gradients */}
             <defs>
-              <radialGradient id="earthGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                <stop offset="0%" stopColor="#2563EB" stopOpacity="0.2" />
-                <stop offset="80%" stopColor="#2563EB" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="#2563EB" stopOpacity="0.05" />
+              <radialGradient id="oceanGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.9" />
+                <stop offset="85%" stopColor="#0C4A6E" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#082F49" stopOpacity="0.7" />
               </radialGradient>
+              <radialGradient id="atmosphereGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                <stop offset="80%" stopColor="#D3E4FD" stopOpacity="0" />
+                <stop offset="95%" stopColor="#D3E4FD" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#D3E4FD" stopOpacity="0.25" />
+              </radialGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
             </defs>
+            
+            {/* Atmosphere glow effect */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={radius + 10}
+              fill="url(#atmosphereGlow)"
+              filter="url(#glow)"
+            />
             
             {/* Earth globe base */}
             <circle
               cx={centerX}
               cy={centerY}
               r={radius}
-              fill="url(#earthGradient)"
-              stroke="#3B82F6"
-              strokeWidth="1"
+              fill="url(#oceanGradient)"
+              stroke="#33C3F0"
+              strokeWidth="0.5"
               strokeOpacity="0.6"
             />
             
-            {/* Continents (simplified shapes) */}
+            {/* Continents (simplified shapes) with realistic colors */}
             {continents.map((path, index) => (
               <path
                 key={index}
                 d={path}
-                fill="#3B82F6"
-                fillOpacity="0.15"
-                stroke="#3B82F6"
-                strokeWidth="0.5"
-                strokeOpacity="0.6"
+                fill="#8E9196"
+                fillOpacity="0.8"
+                stroke="#F2FCE2"
+                strokeWidth="0.3"
+                strokeOpacity="0.4"
                 transform={`rotate(${lngOffset}, ${centerX}, ${centerY})`}
               />
             ))}
             
             {/* Graticules (latitude/longitude lines) */}
-            <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#3B82F6" strokeWidth="0.5" strokeOpacity="0.3" strokeDasharray="2 4" />
-            <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#3B82F6" strokeWidth="0.5" strokeOpacity="0.3" strokeDasharray="2 4" />
-            <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#3B82F6" strokeWidth="0.5" strokeOpacity="0.3" strokeDasharray="2 4" />
+            <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#D3E4FD" strokeWidth="0.3" strokeOpacity="0.2" strokeDasharray="1 3" />
+            <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#D3E4FD" strokeWidth="0.3" strokeOpacity="0.2" strokeDasharray="1 3" />
+            <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#D3E4FD" strokeWidth="0.3" strokeOpacity="0.2" strokeDasharray="1 3" />
             
             {/* Longitude lines */}
             {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, idx) => (
@@ -281,10 +299,10 @@ const SupplyLocationsGlobe = () => {
                 y1={centerY - radius}
                 x2={centerX} 
                 y2={centerY + radius}
-                stroke="#3B82F6"
-                strokeWidth="0.5"
-                strokeOpacity="0.3"
-                strokeDasharray="2 4"
+                stroke="#D3E4FD"
+                strokeWidth="0.3"
+                strokeOpacity="0.2"
+                strokeDasharray="1 3"
                 transform={`rotate(${angle + lngOffset}, ${centerX}, ${centerY})`}
               />
             ))}
@@ -297,9 +315,9 @@ const SupplyLocationsGlobe = () => {
               ry={radius * 0.3}
               fill="none"
               stroke="#F59E0B"
-              strokeWidth="1"
-              strokeDasharray="3 3"
-              className="opacity-50"
+              strokeWidth="0.8"
+              strokeDasharray="2 2"
+              className="opacity-60"
               transform={`rotate(${lngOffset / 2}, ${centerX}, ${centerY})`}
             />
             
@@ -336,6 +354,7 @@ const SupplyLocationsGlobe = () => {
                           stroke="#fff"
                           strokeWidth="1"
                           className="cursor-pointer hover:stroke-2"
+                          style={{ filter: isActive ? 'drop-shadow(0 0 3px #10B981)' : undefined }}
                         />
                       </TooltipTrigger>
                       <TooltipContent side="top">
@@ -355,12 +374,35 @@ const SupplyLocationsGlobe = () => {
                 );
               })}
             </TooltipProvider>
+            
+            {/* Clouds layer overlay (simplified) */}
+            <g transform={`rotate(${lngOffset * 0.7}, ${centerX}, ${centerY})`} opacity="0.15">
+              <path 
+                d="M 120 80 Q 140 70 160 85 Q 175 75 190 90 Q 180 100 190 110 Q 175 115 160 105 Q 145 120 130 110 Q 115 115 120 95 Q 110 85 120 80 Z" 
+                fill="#fff" 
+                opacity="0.5" 
+              />
+              <path 
+                d="M 260 150 Q 280 140 300 155 Q 315 145 330 160 Q 320 170 330 180 Q 315 185 300 175 Q 285 190 270 180 Q 255 185 260 165 Q 250 155 260 150 Z" 
+                fill="#fff" 
+                opacity="0.5" 
+              />
+              <path 
+                d="M 180 220 Q 200 210 220 225 Q 235 215 250 230 Q 240 240 250 250 Q 235 255 220 245 Q 205 260 190 250 Q 175 255 180 235 Q 170 225 180 220 Z" 
+                fill="#fff" 
+                opacity="0.5" 
+              />
+            </g>
+            
+            {/* Earth glare effect */}
+            <circle
+              cx={centerX - radius * 0.4}
+              cy={centerY - radius * 0.4}
+              r={radius * 0.15}
+              fill="white"
+              opacity="0.05"
+            />
           </svg>
-          
-          {/* Earth icon overlay - subtle */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
-            <Globe size={radius * 1.5} />
-          </div>
         </div>
         
         {/* Location details for the currently active supply location */}
