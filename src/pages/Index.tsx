@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CargoProvider } from '@/contexts/CargoContext';
 import { useCargoContext } from '@/contexts/CargoContext';
@@ -9,7 +8,7 @@ import ItemDetails from '@/components/ItemDetails';
 import ActionLog from '@/components/ActionLog';
 import ItemSearch from '@/components/ItemSearch';
 import RearrangementPlan from '@/components/RearrangementPlan';
-import WasteDisposal from '@/components/WasteDisposalPlan';
+import WasteDisposal from '@/components/WasteDisposal';
 import TimeControls from '@/components/TimeControls';
 import SymbolLegend from '@/components/SymbolLegend';
 import SupplyLocationsGlobe from '@/components/SupplyLocationsGlobe';
@@ -36,7 +35,6 @@ const DashboardContent = () => {
     ? simulationState.items.find(item => item.id === selectedItemId) || null
     : null;
   
-  // Get container by zone for visualization tabs
   const containersByZone = simulationState.containers.reduce((acc, container) => {
     if (!acc[container.zone]) {
       acc[container.zone] = [];

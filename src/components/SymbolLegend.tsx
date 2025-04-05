@@ -44,7 +44,7 @@ const SymbolLegend = () => {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded bg-[rgba(16,185,129,0.7)]" />
-                <span className="text-xs">Low Priority (<50)</span>
+                <span className="text-xs">Low Priority (&lt;50)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded bg-[rgba(239,68,68,0.3)]" />
