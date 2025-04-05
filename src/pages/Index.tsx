@@ -9,8 +9,10 @@ import ItemDetails from '@/components/ItemDetails';
 import ActionLog from '@/components/ActionLog';
 import ItemSearch from '@/components/ItemSearch';
 import RearrangementPlan from '@/components/RearrangementPlan';
-import WasteDisposal from '@/components/WasteDisposal';
+import WasteDisposal from '@/components/WasteDisposalPlan';
 import TimeControls from '@/components/TimeControls';
+import SymbolLegend from '@/components/SymbolLegend';
+import SupplyLocationsGlobe from '@/components/SupplyLocationsGlobe';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -85,7 +87,7 @@ const DashboardContent = () => {
               
               {Object.keys(containersByZone).map(zone => (
                 <TabsContent key={zone} value={zone} className="mt-4">
-                  <ScrollArea className="h-[400px]">
+                  <ScrollArea className="h-[350px]">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-4">
                       {containersByZone[zone].map(container => (
                         <ContainerVisualization
@@ -97,6 +99,9 @@ const DashboardContent = () => {
                       ))}
                     </div>
                   </ScrollArea>
+                  <div className="p-4 border-t">
+                    <SymbolLegend />
+                  </div>
                 </TabsContent>
               ))}
             </Tabs>
@@ -117,6 +122,8 @@ const DashboardContent = () => {
               <WasteDisposal plan={getWasteDisposalPlan()} />
             </div>
           </div>
+          
+          <SupplyLocationsGlobe />
         </div>
         
         <div className="space-y-4">

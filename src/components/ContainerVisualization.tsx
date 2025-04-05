@@ -3,6 +3,17 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Container, CargoItem } from '@/types';
 import { ArrowUpCircle } from 'lucide-react';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 
 interface ContainerVisualizationProps {
   container: Container;
@@ -17,9 +28,6 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   onItemClick,
   className
 }) => {
-  // This is a simplified 2D visualization
-  // In a real application, we'd use a 3D library like Three.js
-  
   // Calculate the scale to fit the container in the viewport
   const maxSize = Math.max(container.width, container.depth, container.height);
   const scale = 300 / maxSize; // Assume max visualization size is 300px
@@ -63,33 +71,66 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
             height: item.height * scale,
             left: item.position.x * scale,
             top: item.position.z * scale, // In 2D view, we map Z (height) to Y
-            backgroundColor: getItemColor(item),
-            opacity: item.isWaste ? 0.5 : 1,
           };
           
+          // Determine appropriate symbol/icon for the item type
+          const symbol = getItemSymbol(item);
+          const bgColor = getItemColor(item);
+          
           return (
-            <div
-              key={item.id}
-              className={cn(
-                "absolute rounded border cursor-pointer transition-transform hover:translate-y-[-2px]",
-                selectedItemId === item.id ? "ring-2 ring-accent shadow-lg" : "border-muted/50"
-              )}
-              style={itemStyle}
-              onClick={() => onItemClick && onItemClick(item)}
-              title={`${item.name} (Priority: ${item.priority})`}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-xs p-1 truncate">
-                {item.name}
-              </div>
-              
-              {item.isWaste && (
-                <div className="absolute top-0 right-0 bg-status-danger w-2 h-2 rounded-full"></div>
-              )}
-              
-              {item.priority > 80 && (
-                <div className="absolute top-0 left-0 bg-status-info w-2 h-2 rounded-full"></div>
-              )}
-            </div>
+            <HoverCard key={item.id}>
+              <HoverCardTrigger asChild>
+                <div
+                  className={cn(
+                    "absolute rounded border cursor-pointer transition-transform hover:translate-y-[-2px] flex items-center justify-center",
+                    selectedItemId === item.id ? "ring-2 ring-accent shadow-lg" : "border-muted/50"
+                  )}
+                  style={{
+                    ...itemStyle,
+                    backgroundColor: bgColor,
+                    opacity: item.isWaste ? 0.5 : 1,
+                  }}
+                  onClick={() => onItemClick && onItemClick(item)}
+                >
+                  <div className="text-xs font-bold text-foreground mix-blend-difference">
+                    {symbol}
+                  </div>
+                  
+                  {/* Status indicators as small dots */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {item.isWaste && (
+                      <div className="absolute top-0 right-0 bg-status-danger w-2 h-2 rounded-full"></div>
+                    )}
+                    
+                    {item.priority > 80 && (
+                      <div className="absolute top-0 left-0 bg-status-info w-2 h-2 rounded-full"></div>
+                    )}
+                  </div>
+                </div>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-64 p-3">
+                <div className="space-y-2">
+                  <h4 className="font-semibold">{item.name}</h4>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <div>Priority: <span className="font-semibold">{item.priority}</span></div>
+                    <div>Mass: <span className="font-semibold">{item.mass} kg</span></div>
+                    <div>Dimensions: <span className="font-semibold">{item.width}×{item.depth}×{item.height} cm</span></div>
+                    {item.expiryDate && (
+                      <div>Expires: <span className="font-semibold">{new Date(item.expiryDate).toLocaleDateString()}</span></div>
+                    )}
+                    {item.usageLimit !== null && (
+                      <div>Usage: <span className="font-semibold">{item.usageCount}/{item.usageLimit}</span></div>
+                    )}
+                    <div className="col-span-2">Zone: <span className="font-semibold">{item.preferredZone}</span></div>
+                  </div>
+                  {item.isWaste && (
+                    <div className="bg-status-danger/10 text-status-danger text-xs p-1 rounded">
+                      Marked as waste
+                    </div>
+                  )}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           );
         })}
         
@@ -110,6 +151,31 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
     </div>
   );
 };
+
+// Helper function to get a symbol based on item characteristics
+function getItemSymbol(item: CargoItem): string {
+  if (item.isWaste) {
+    return '♻️';
+  }
+  
+  // Based on item preferred zone
+  switch (item.preferredZone) {
+    case 'Crew Quarters':
+      return '🍲';
+    case 'Airlock':
+      return '🧰';
+    case 'Laboratory':
+      return '🔬';
+    case 'Medical Bay':
+      return '💊';
+    case 'Storage Bay':
+      return '📦';
+    case 'Command Center':
+      return '💻';
+    default:
+      return '●';
+  }
+}
 
 // Helper function to get color based on item priority
 function getItemColor(item: CargoItem): string {
