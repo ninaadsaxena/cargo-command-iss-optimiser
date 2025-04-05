@@ -97,3 +97,13 @@ export interface SimulationState {
   logs: ActionLog[];
   astronauts: Astronaut[];
 }
+
+export interface SupplyLocation {
+  id: string;
+  name: string;
+  country: string;
+  coordinates: [number, number]; // [latitude, longitude]
+  active: boolean;
+  lastLaunch?: string;
+  nextLaunch?: string;
+}
