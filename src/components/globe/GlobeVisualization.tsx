@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import { SupplyLocation } from '@/types';
 import { continents } from '@/data/continentsData';
 
