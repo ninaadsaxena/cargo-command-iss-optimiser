@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Weight, Ship } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 interface WasteDisposalProps {
   plan: WasteDisposalPlanType;
@@ -12,6 +13,17 @@ interface WasteDisposalProps {
 }
 
 const WasteDisposal: React.FC<WasteDisposalProps> = ({ plan, onDispose }) => {
+  const handleDispose = () => {
+    if (onDispose) {
+      onDispose();
+    } else {
+      toast({
+        title: "Preparing for undocking",
+        description: `${plan.wasteItems.length} waste items prepared for disposal`,
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -58,7 +70,7 @@ const WasteDisposal: React.FC<WasteDisposalProps> = ({ plan, onDispose }) => {
             <Button 
               variant="destructive" 
               className="w-full"
-              onClick={onDispose}
+              onClick={handleDispose}
             >
               Prepare for Undocking
             </Button>

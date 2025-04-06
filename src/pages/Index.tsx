@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CargoProvider } from '@/contexts/CargoContext';
 import { useCargoContext } from '@/contexts/CargoContext';
@@ -17,10 +18,26 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { CargoItem } from '@/types';
+import { toast } from '@/components/ui/use-toast';
+import { DialogTitle, DialogDescription, DialogHeader, DialogFooter, DialogContent, Dialog } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const DashboardContent = () => {
-  const { simulationState, isLoading, retrieveItem, markAsWaste, getRearrangementPlan, getWasteDisposalPlan, simulateNextDay, simulateDays } = useCargoContext();
+  const { 
+    simulationState, 
+    isLoading, 
+    retrieveItem, 
+    markAsWaste, 
+    getRearrangementPlan, 
+    getWasteDisposalPlan, 
+    simulateNextDay, 
+    simulateDays 
+  } = useCargoContext();
+  
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [showPlacementDialog, setShowPlacementDialog] = useState(false);
+  const [placementItem, setPlacementItem] = useState<CargoItem | null>(null);
+  const [recommendedContainer, setRecommendedContainer] = useState<string>('');
   
   if (isLoading) {
     return (
@@ -60,6 +77,73 @@ const DashboardContent = () => {
   const handleMarkAsWaste = () => {
     if (selectedItem) {
       markAsWaste(selectedItem);
+    }
+  };
+
+  const handleFindPlacement = (item: CargoItem) => {
+    // Find the best container based on preferred zone
+    const preferredContainers = simulationState.containers.filter(
+      container => container.zone === item.preferredZone
+    );
+    
+    // If there are no containers in the preferred zone, use any container
+    const targetContainers = preferredContainers.length > 0 
+      ? preferredContainers 
+      : simulationState.containers;
+    
+    // Find the container with the lowest space utilization
+    const bestContainer = targetContainers.sort(
+      (a, b) => a.spaceUtilization - b.spaceUtilization
+    )[0];
+    
+    if (bestContainer) {
+      setPlacementItem(item);
+      setRecommendedContainer(bestContainer.id);
+      setShowPlacementDialog(true);
+    } else {
+      toast({
+        title: "No suitable container found",
+        description: "Unable to find a container for this item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConfirmPlacement = () => {
+    if (placementItem && recommendedContainer) {
+      // In a real implementation, we would call the API to place the item
+      // For now, we'll just show a toast notification
+      toast({
+        title: "Item placed",
+        description: `${placementItem.name} placed in container ${recommendedContainer}`,
+      });
+      
+      // Close the dialog
+      setShowPlacementDialog(false);
+      setPlacementItem(null);
+    }
+  };
+
+  const handleMoveToDisposal = (item: CargoItem) => {
+    toast({
+      title: "Item moved to disposal",
+      description: `${item.name} has been moved to the disposal area.`,
+    });
+  };
+
+  const handleWasteDisposal = () => {
+    const wasteItems = getWasteDisposalPlan().wasteItems;
+    
+    if (wasteItems.length > 0) {
+      toast({
+        title: "Waste disposal initiated",
+        description: `${wasteItems.length} items prepared for disposal`,
+      });
+    } else {
+      toast({
+        title: "No waste items",
+        description: "There are no waste items to dispose of",
+      });
     }
   };
 
@@ -117,7 +201,10 @@ const DashboardContent = () => {
             <h2 className="text-lg font-semibold mb-4">Optimization Plans</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <RearrangementPlan plan={getRearrangementPlan()} />
-              <WasteDisposal plan={getWasteDisposalPlan()} />
+              <WasteDisposal 
+                plan={getWasteDisposalPlan()} 
+                onDispose={handleWasteDisposal}
+              />
             </div>
           </div>
           
@@ -130,6 +217,8 @@ const DashboardContent = () => {
               item={selectedItem}
               onRetrieve={handleRetrieveItem}
               onMarkAsWaste={handleMarkAsWaste}
+              onFindPlacement={handleFindPlacement}
+              onMoveToDisposal={handleMoveToDisposal}
             />
           ) : (
             <div className="glass-panel p-6 text-center">
@@ -144,6 +233,48 @@ const DashboardContent = () => {
           />
         </div>
       </div>
+
+      {/* Placement Recommendation Dialog */}
+      <Dialog open={showPlacementDialog} onOpenChange={setShowPlacementDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Placement Recommendation</DialogTitle>
+            <DialogDescription>
+              We've found an optimal placement for {placementItem?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Recommended Container:</span>
+              <span>{recommendedContainer}</span>
+            </div>
+            
+            {placementItem && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Item Dimensions:</span>
+                <span className="font-mono">{placementItem.width}×{placementItem.depth}×{placementItem.height} cm</span>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Container Zone:</span>
+              <span>
+                {simulationState.containers.find(c => c.id === recommendedContainer)?.zone || ''}
+              </span>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPlacementDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmPlacement}>
+              Confirm Placement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

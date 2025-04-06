@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CargoItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,20 +5,47 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { PackageCheck, PackageX, Trash2, MoveRight } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface ItemDetailsProps {
   item: CargoItem;
   onRetrieve?: () => void;
   onMarkAsWaste?: () => void;
+  onFindPlacement?: (item: CargoItem) => void;
+  onMoveToDisposal?: (item: CargoItem) => void;
 }
 
 const ItemDetails: React.FC<ItemDetailsProps> = ({
   item,
   onRetrieve,
   onMarkAsWaste,
+  onFindPlacement,
+  onMoveToDisposal,
 }) => {
   const isExpired = item.expiryDate && new Date(item.expiryDate) <= new Date();
   const isExhausted = item.usageLimit !== null && item.usageCount >= item.usageLimit;
+  
+  const handleFindPlacement = () => {
+    if (onFindPlacement) {
+      onFindPlacement(item);
+    } else {
+      toast({
+        title: "Finding placement...",
+        description: `Searching for optimal placement for ${item.name}`,
+      });
+    }
+  };
+
+  const handleMoveToDisposal = () => {
+    if (onMoveToDisposal) {
+      onMoveToDisposal(item);
+    } else {
+      toast({
+        title: "Moving to disposal...",
+        description: `Preparing ${item.name} for disposal`,
+      });
+    }
+  };
   
   return (
     <Card className="w-full">
@@ -128,6 +154,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
               variant="outline" 
               size="sm"
               className="gap-2"
+              onClick={handleMoveToDisposal}
             >
               <MoveRight size={16} />
               Move to Disposal
@@ -139,6 +166,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
               variant="default" 
               size="sm"
               className="gap-2"
+              onClick={handleFindPlacement}
             >
               <PackageX size={16} />
               Find Placement
