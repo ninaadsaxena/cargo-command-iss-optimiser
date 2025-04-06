@@ -1,178 +1,280 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CargoItem, Container, ActionLog, SimulationState, PlacementRecommendation, RetrievalInstruction, RearrangementPlan, WasteDisposalPlan } from '@/types';
-import { createInitialState, getRecommendedPlacement, findItemForRetrieval, simulateDay, generateRearrangementPlan, generateWasteDisposalPlan } from '@/services/mockData';
-import { useToast } from '@/hooks/use-toast';
+import { CargoItem, Container, ActionLog, PlacementRecommendation, RetrievalInstruction, RearrangementPlan, WasteDisposalPlan, SimulationState, Astronaut } from '@/types';
+import CargoService from '@/services/CargoService';
+import { toast } from '@/hooks/use-toast';
 
 interface CargoContextType {
   simulationState: SimulationState;
   isLoading: boolean;
-  searchItem: (name: string) => RetrievalInstruction | null;
-  placeItem: (item: CargoItem) => PlacementRecommendation | null;
-  retrieveItem: (item: CargoItem) => void;
-  markAsWaste: (item: CargoItem) => void;
-  simulateNextDay: () => void;
-  simulateDays: (days: number) => void;
+  searchItem: (query: string) => { item: CargoItem; containerId: string } | null;
+  retrieveItem: (item: CargoItem) => Promise<void>;
+  markAsWaste: (item: CargoItem) => Promise<void>;
   getRearrangementPlan: () => RearrangementPlan;
   getWasteDisposalPlan: () => WasteDisposalPlan;
-  addLog: (log: Omit<ActionLog, 'id' | 'timestamp'>) => void;
+  simulateNextDay: () => Promise<void>;
+  simulateDays: (days: number) => Promise<void>;
+  addLog: (log: Partial<ActionLog>) => Promise<void>;
 }
 
 const CargoContext = createContext<CargoContextType | undefined>(undefined);
 
 export const CargoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [simulationState, setSimulationState] = useState<SimulationState>({
-    currentDate: "",
+    currentDate: new Date().toISOString(),
     containers: [],
     items: [],
     logs: [],
     astronauts: []
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Load initial data
   useEffect(() => {
-    // Simulate API call to get initial data
-    const loadData = async () => {
-      setIsLoading(true);
+    const fetchData = async () => {
       try {
-        // In a real application, this would be an API call
-        const initialState = createInitialState();
-        setSimulationState(initialState);
+        const data = await CargoService.getSimulationState();
+        setSimulationState(data);
+        setIsLoading(false);
       } catch (error) {
-        console.error('Failed to load initial data:', error);
+        console.error('Error loading cargo data:', error);
+        setIsLoading(false);
         toast({
           title: 'Error',
           description: 'Failed to load cargo data. Please try again.',
           variant: 'destructive',
         });
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    loadData();
-  }, [toast]);
+    fetchData();
+  }, []);
 
-  const searchItem = (name: string): RetrievalInstruction | null => {
-    return findItemForRetrieval(name, simulationState.containers);
-  };
-
-  const placeItem = (item: CargoItem): PlacementRecommendation | null => {
-    return getRecommendedPlacement(item, simulationState.containers);
-  };
-
-  const retrieveItem = (item: CargoItem) => {
-    // Clone the state to avoid mutations
-    const newState = { ...simulationState };
-    
-    // Find the item in the containers
-    const container = newState.containers.find(c => 
-      c.items.some(i => i.id === item.id)
+  const searchItem = (query: string) => {
+    // First check local data for exact match
+    const exactMatch = simulationState.items.find(
+      item => item.name.toLowerCase() === query.toLowerCase() || item.id === query
     );
-
-    if (container) {
-      // Remove the item from the container
-      container.items = container.items.filter(i => i.id !== item.id);
-      
-      // Update the item's position
-      const updatedItems = newState.items.map(i => {
-        if (i.id === item.id) {
-          // Increment usage count
-          i.usageCount++;
-          
-          // Check if item has reached usage limit
-          if (i.usageLimit !== null && i.usageCount >= i.usageLimit) {
-            i.isWaste = true;
-          }
-          
-          // Remove position
-          delete i.position;
-          return i;
+    
+    if (exactMatch && exactMatch.position) {
+      const containerId = exactMatch.position.containerId;
+      return { item: exactMatch, containerId };
+    }
+    
+    // Then check for partial matches
+    const partialMatches = simulationState.items.filter(
+      item => item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (partialMatches.length > 0) {
+      // Sort matches by priority and retrieval difficulty
+      const sortedMatches = partialMatches.sort((a, b) => {
+        // Prioritize items with positions
+        if (a.position && !b.position) return -1;
+        if (!a.position && b.position) return 1;
+        
+        // Then prioritize by expiry date if both have it
+        if (a.expiryDate && b.expiryDate) {
+          return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
         }
-        return i;
+        
+        // Then prioritize by priority
+        return b.priority - a.priority;
       });
       
-      newState.items = updatedItems;
-      
-      // Update the container's space utilization (simplified)
-      container.spaceUtilization = Math.max(0, container.spaceUtilization - 5);
-      
-      setSimulationState(newState);
-      
-      toast({
-        title: 'Item Retrieved',
-        description: `${item.name} has been successfully retrieved.`,
-      });
-    }
-  };
-
-  const markAsWaste = (item: CargoItem) => {
-    // Clone the state to avoid mutations
-    const newState = { ...simulationState };
-    
-    // Mark the item as waste
-    const updatedItems = newState.items.map(i => {
-      if (i.id === item.id) {
-        i.isWaste = true;
-        return i;
+      const bestMatch = sortedMatches[0];
+      if (bestMatch.position) {
+        return { item: bestMatch, containerId: bestMatch.position.containerId };
       }
-      return i;
-    });
-    
-    newState.items = updatedItems;
-    setSimulationState(newState);
-    
-    toast({
-      title: 'Item Marked as Waste',
-      description: `${item.name} has been marked for disposal.`,
-    });
-  };
-
-  const simulateNextDay = () => {
-    const newState = simulateDay(simulationState);
-    setSimulationState(newState);
-    
-    toast({
-      title: 'Day Simulated',
-      description: `Advanced to ${newState.currentDate}`,
-    });
-  };
-
-  const simulateDays = (days: number) => {
-    let currentState = { ...simulationState };
-    
-    for (let i = 0; i < days; i++) {
-      currentState = simulateDay(currentState);
     }
     
-    setSimulationState(currentState);
-    
-    toast({
-      title: 'Days Simulated',
-      description: `Advanced ${days} days to ${currentState.currentDate}`,
-    });
+    return null;
+  };
+
+  const retrieveItem = async (item: CargoItem) => {
+    try {
+      const success = await CargoService.retrieveItem(item);
+      
+      if (success) {
+        // Update local state
+        const updatedItems = simulationState.items.map(i => {
+          if (i.id === item.id) {
+            return {
+              ...i,
+              usageCount: i.usageCount + 1,
+              position: null, // Item is now retrieved
+              isWaste: i.usageLimit !== null && i.usageCount + 1 >= i.usageLimit
+            };
+          }
+          return i;
+        });
+        
+        // Update containers space utilization
+        const updatedContainers = simulationState.containers.map(container => {
+          if (item.position && container.id === item.position.containerId) {
+            // This is a simplified calculation - in a real app we'd recalculate based on all items
+            const itemVolume = item.width * item.depth * item.height;
+            const containerVolume = container.width * container.depth * container.height;
+            const spaceReduction = (itemVolume / containerVolume) * 100;
+            
+            return {
+              ...container,
+              spaceUtilization: Math.max(0, container.spaceUtilization - spaceReduction)
+            };
+          }
+          return container;
+        });
+        
+        // Add log
+        const newLog: ActionLog = {
+          id: `log-${simulationState.logs.length + 1}`,
+          timestamp: new Date().toISOString(),
+          astronaut: simulationState.astronauts[0].id,
+          action: 'retrieval',
+          description: `Retrieved ${item.name}`,
+          itemId: item.id,
+          containerId: item.position ? item.position.containerId : undefined
+        };
+        
+        setSimulationState({
+          ...simulationState,
+          items: updatedItems,
+          containers: updatedContainers,
+          logs: [...simulationState.logs, newLog]
+        });
+        
+        toast({
+          title: 'Item Retrieved',
+          description: `${item.name} has been retrieved`,
+        });
+      }
+    } catch (error) {
+      console.error('Error retrieving item:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to retrieve item. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const markAsWaste = async (item: CargoItem) => {
+    try {
+      const success = await CargoService.markAsWaste(item);
+      
+      if (success) {
+        // Update local state
+        const updatedItems = simulationState.items.map(i => {
+          if (i.id === item.id) {
+            return {
+              ...i,
+              isWaste: true
+            };
+          }
+          return i;
+        });
+        
+        // Add log
+        const newLog: ActionLog = {
+          id: `log-${simulationState.logs.length + 1}`,
+          timestamp: new Date().toISOString(),
+          astronaut: simulationState.astronauts[0].id,
+          action: 'waste-marking',
+          description: `Marked ${item.name} as waste`,
+          itemId: item.id
+        };
+        
+        setSimulationState({
+          ...simulationState,
+          items: updatedItems,
+          logs: [...simulationState.logs, newLog]
+        });
+        
+        toast({
+          title: 'Item Marked as Waste',
+          description: `${item.name} has been marked as waste`,
+        });
+      }
+    } catch (error) {
+      console.error('Error marking item as waste:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark item as waste. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getRearrangementPlan = (): RearrangementPlan => {
-    return generateRearrangementPlan(simulationState.containers);
+    return CargoService.getRearrangementPlan();
   };
 
   const getWasteDisposalPlan = (): WasteDisposalPlan => {
-    return generateWasteDisposalPlan(simulationState);
+    return CargoService.getWasteDisposalPlan();
   };
 
-  const addLog = (log: Omit<ActionLog, 'id' | 'timestamp'>) => {
+  const simulateNextDay = async () => {
+    try {
+      setIsLoading(true);
+      const updatedState = await CargoService.simulateNextDay();
+      setSimulationState(updatedState);
+      
+      toast({
+        title: 'Simulation Advanced',
+        description: `Advanced to ${new Date(updatedState.currentDate).toLocaleDateString()}`,
+      });
+    } catch (error) {
+      console.error('Error simulating next day:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to simulate next day. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const simulateDays = async (days: number) => {
+    try {
+      setIsLoading(true);
+      const updatedState = await CargoService.simulateDays(days);
+      setSimulationState(updatedState);
+      
+      toast({
+        title: 'Simulation Advanced',
+        description: `Advanced ${days} days to ${new Date(updatedState.currentDate).toLocaleDateString()}`,
+      });
+    } catch (error) {
+      console.error(`Error simulating ${days} days:`, error);
+      toast({
+        title: 'Error',
+        description: `Failed to simulate ${days} days. Please try again.`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addLog = async (log: Partial<ActionLog>) => {
+    await CargoService.addLog(log);
+    
+    // Update local state with new log
     const newLog: ActionLog = {
-      ...log,
-      id: Math.random().toString(36).substring(2, 10),
+      id: `log-${simulationState.logs.length + 1}`,
       timestamp: new Date().toISOString(),
+      astronaut: log.astronaut || simulationState.astronauts[0].id,
+      action: log.action || 'placement',
+      description: log.description || '',
+      itemId: log.itemId,
+      containerId: log.containerId
     };
     
-    setSimulationState(prevState => ({
-      ...prevState,
-      logs: [newLog, ...prevState.logs],
-    }));
+    setSimulationState({
+      ...simulationState,
+      logs: [...simulationState.logs, newLog]
+    });
   };
 
   return (
@@ -181,14 +283,13 @@ export const CargoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         simulationState,
         isLoading,
         searchItem,
-        placeItem,
         retrieveItem,
         markAsWaste,
-        simulateNextDay,
-        simulateDays,
         getRearrangementPlan,
         getWasteDisposalPlan,
-        addLog,
+        simulateNextDay,
+        simulateDays,
+        addLog
       }}
     >
       {children}

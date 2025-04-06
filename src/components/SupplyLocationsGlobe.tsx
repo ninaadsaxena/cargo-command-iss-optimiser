@@ -5,6 +5,7 @@ import { supplyLocations } from '@/data/supplyLocations';
 import LocationDetails from '@/components/globe/LocationDetails';
 import { SupplyLocation } from '@/types';
 import { World } from '@/components/ui/globe';
+import { Badge } from '@/components/ui/badge';
 
 const SupplyLocationsGlobe = () => {
   const [activeLocation, setActiveLocation] = useState<string>('ksc');
@@ -42,6 +43,19 @@ const SupplyLocationsGlobe = () => {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">Supply Launch Locations</CardTitle>
+          
+          <div className="flex gap-1">
+            {supplyLocations.filter(loc => loc.active).slice(0, 3).map(loc => (
+              <Badge 
+                key={loc.id}
+                variant="outline" 
+                className="cursor-pointer hover:bg-secondary"
+                onClick={() => setActiveLocation(loc.id)}
+              >
+                {loc.name.split(' ')[0]}
+              </Badge>
+            ))}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pb-2">

@@ -1,4 +1,5 @@
 
+"use client";
 import { useEffect, useRef, useState } from "react";
 import { Color, Scene, Fog, PerspectiveCamera, Vector3 } from "three";
 import ThreeGlobe from "three-globe";
@@ -89,7 +90,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
   useEffect(() => {
     if (!globeRef.current && groupRef.current) {
       globeRef.current = new ThreeGlobe();
-      groupRef.current.add(globeRef.current);
+      (groupRef.current as any).add(globeRef.current);
       setIsInitialized(true);
     }
   }, []);

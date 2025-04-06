@@ -1,94 +1,72 @@
 
 import { SupplyLocation } from '@/types';
 
-// Enhanced supply locations data with more launch sites
 export const supplyLocations: SupplyLocation[] = [
   {
     id: 'ksc',
     name: 'Kennedy Space Center',
     country: 'USA',
-    coordinates: [28.5729, -80.6490],
+    coordinates: [28.5728, -80.6490],
     active: true,
-    lastLaunch: '2023-11-09',
-    nextLaunch: '2024-05-15',
+    lastLaunch: '2025-03-15',
+    nextLaunch: '2025-04-20'
   },
   {
-    id: 'bai',
+    id: 'baikonur',
     name: 'Baikonur Cosmodrome',
     country: 'Kazakhstan',
-    coordinates: [45.9646, 63.3052],
+    coordinates: [45.9644, 63.3050],
     active: true,
-    lastLaunch: '2023-09-14',
-    nextLaunch: '2024-06-22',
+    lastLaunch: '2025-03-02',
+    nextLaunch: '2025-04-12'
   },
   {
-    id: 'tan',
+    id: 'tanegashima',
     name: 'Tanegashima Space Center',
     country: 'Japan',
-    coordinates: [30.3813, 130.9687],
-    active: false,
-    lastLaunch: '2023-02-18',
+    coordinates: [30.3984, 130.9707],
+    active: true,
+    lastLaunch: '2025-02-28',
+    nextLaunch: '2025-05-01'
   },
   {
-    id: 'gui',
+    id: 'kourou',
     name: 'Guiana Space Centre',
     country: 'French Guiana',
-    coordinates: [5.1679, -52.6832],
+    coordinates: [5.2320, -52.7693],
     active: true,
-    lastLaunch: '2023-10-30',
-    nextLaunch: '2024-07-08',
+    lastLaunch: '2025-03-10',
+    nextLaunch: '2025-04-18'
   },
   {
-    id: 'wen',
-    name: 'Wenchang Space Launch Site',
-    country: 'China',
-    coordinates: [19.6145, 110.9510],
-    active: false,
-    lastLaunch: '2023-05-10',
-  },
-  {
-    id: 'van',
+    id: 'vandenberg',
     name: 'Vandenberg Space Force Base',
     country: 'USA',
     coordinates: [34.7420, -120.5724],
     active: true,
-    lastLaunch: '2023-12-15',
-    nextLaunch: '2024-08-05',
+    nextLaunch: '2025-05-05'
   },
   {
-    id: 'sat',
+    id: 'jiuquan',
+    name: 'Jiuquan Satellite Launch Center',
+    country: 'China',
+    coordinates: [40.9575, 100.2915],
+    active: true,
+    lastLaunch: '2025-03-20'
+  },
+  {
+    id: 'satish',
     name: 'Satish Dhawan Space Centre',
     country: 'India',
-    coordinates: [13.7199, 80.2304],
+    coordinates: [13.7330, 80.2048],
     active: true,
-    lastLaunch: '2023-10-12',
-    nextLaunch: '2024-06-15',
+    nextLaunch: '2025-04-25'
   },
   {
-    id: 'ple',
+    id: 'plesetsk',
     name: 'Plesetsk Cosmodrome',
     country: 'Russia',
     coordinates: [62.9271, 40.5777],
-    active: true,
-    lastLaunch: '2023-11-01',
-    nextLaunch: '2024-05-28',
-  },
-  {
-    id: 'jiu',
-    name: 'Jiuquan Satellite Launch Center',
-    country: 'China',
-    coordinates: [40.9608, 100.2910],
-    active: true,
-    lastLaunch: '2023-09-25',
-    nextLaunch: '2024-07-12',
-  },
-  {
-    id: 'mah',
-    name: 'Mahia Peninsula',
-    country: 'New Zealand',
-    coordinates: [-39.2599, 177.8645],
-    active: true,
-    lastLaunch: '2023-10-18',
-    nextLaunch: '2024-06-02',
-  },
+    active: false
+  }
 ];
