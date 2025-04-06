@@ -4,39 +4,41 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supplyLocations } from '@/data/supplyLocations';
 import LocationDetails from '@/components/globe/LocationDetails';
 import { SupplyLocation } from '@/types';
-import { World } from '@/components/ui/globe';
 import { Badge } from '@/components/ui/badge';
+import GlobeVisualization from '@/components/globe/SimplifiedGlobe';
 
 const SupplyLocationsGlobe = () => {
   const [activeLocation, setActiveLocation] = useState<string>('ksc');
-  
-  const globeConfig = {
-    pointSize: 4,
-    globeColor: "#062056",
-    showAtmosphere: true,
-    atmosphereColor: "#FFFFFF",
-    atmosphereAltitude: 0.1,
-    emissive: "#062056",
-    emissiveIntensity: 0.1,
-    shininess: 0.9,
-    polygonColor: "rgba(255,255,255,0.7)",
-    ambientLight: "#38bdf8",
-    directionalLeftLight: "#ffffff",
-    directionalTopLight: "#ffffff",
-    pointLight: "#ffffff",
-    arcTime: 1000,
-    arcLength: 0.9,
-    rings: 1,
-    maxRings: 3,
-    initialPosition: { lat: 22.3193, lng: 114.1694 },
-    autoRotate: true,
-    autoRotateSpeed: 0.5,
-  };
-  
-  // Generate arcs based on supply locations
-  const arcs = generateArcsFromLocations(supplyLocations);
+  const [lngOffset, setLngOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [lastMouseX, setLastMouseX] = useState<number>(0);
   
   const activeLocationData = supplyLocations.find(loc => loc.id === activeLocation);
+  
+  const handleLocationSelect = (id: string) => {
+    setActiveLocation(id);
+  };
+  
+  const handleStartDrag = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setLastMouseX(e.clientX);
+  };
+  
+  const handleDrag = (e: React.MouseEvent) => {
+    if (isDragging) {
+      const delta = e.clientX - lastMouseX;
+      setLngOffset((prev) => (prev + delta * 0.5) % 360);
+      setLastMouseX(e.clientX);
+    }
+  };
+  
+  const handleEndDrag = () => {
+    setIsDragging(false);
+  };
+  
+  const handleLeaveDrag = () => {
+    setIsDragging(false);
+  };
   
   return (
     <Card className="mt-4">
@@ -48,7 +50,7 @@ const SupplyLocationsGlobe = () => {
             {supplyLocations.filter(loc => loc.active).slice(0, 3).map(loc => (
               <Badge 
                 key={loc.id}
-                variant="outline" 
+                variant={loc.id === activeLocation ? "success" : "outline"}
                 className="cursor-pointer hover:bg-secondary"
                 onClick={() => setActiveLocation(loc.id)}
               >
@@ -59,8 +61,21 @@ const SupplyLocationsGlobe = () => {
         </div>
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="relative w-full h-[300px] overflow-hidden">
-          <World data={arcs} globeConfig={globeConfig} />
+        <div className="relative w-full h-[300px] overflow-hidden rounded-md border border-slate-200 dark:border-slate-800">
+          <GlobeVisualization 
+            width={800}
+            height={300}
+            lngOffset={lngOffset}
+            activeLocation={activeLocation}
+            locations={supplyLocations}
+            rotating={!isDragging}
+            isDragging={isDragging}
+            onLocationSelect={handleLocationSelect}
+            onStartDrag={handleStartDrag}
+            onDrag={handleDrag}
+            onEndDrag={handleEndDrag}
+            onLeaveDrag={handleLeaveDrag}
+          />
         </div>
         
         {/* Location details for the currently active supply location */}
@@ -71,32 +86,5 @@ const SupplyLocationsGlobe = () => {
     </Card>
   );
 };
-
-// Function to generate arcs between supply locations
-function generateArcsFromLocations(locations: SupplyLocation[]) {
-  const colors = ["#06b6d4", "#3b82f6", "#6366f1"];
-  const arcs = [];
-  
-  // Generate connections between active locations
-  const activeLocations = locations.filter(loc => loc.active);
-  
-  for (let i = 0; i < activeLocations.length; i++) {
-    for (let j = i + 1; j < activeLocations.length; j++) {
-      if (Math.random() > 0.3) { // Only create some connections, not all
-        arcs.push({
-          order: Math.floor(Math.random() * 5) + 1,
-          startLat: activeLocations[i].coordinates[0],
-          startLng: activeLocations[i].coordinates[1],
-          endLat: activeLocations[j].coordinates[0],
-          endLng: activeLocations[j].coordinates[1],
-          arcAlt: Math.random() * 0.3 + 0.1,
-          color: colors[Math.floor(Math.random() * colors.length)],
-        });
-      }
-    }
-  }
-  
-  return arcs;
-}
 
 export default SupplyLocationsGlobe;
