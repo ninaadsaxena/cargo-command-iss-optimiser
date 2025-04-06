@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Container, CargoItem } from '@/types';
-import { ArrowUpCircle } from 'lucide-react';
+import { ArrowUpCircle, Box } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -32,10 +32,16 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   const maxSize = Math.max(container.width, container.depth, container.height);
   const scale = 300 / maxSize; // Assume max visualization size is 300px
   
+  // Get container color based on zone
+  const containerColor = getContainerColor(container.zone);
+  
   return (
     <div className={cn("glass-panel p-4", className)}>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{container.id}</h3>
+        <div className="flex items-center">
+          <Box className="mr-2 text-muted-foreground" size={16} />
+          <h3 className="text-lg font-semibold">{container.id}</h3>
+        </div>
         <span className="text-sm text-muted-foreground">{container.zone}</span>
       </div>
       
@@ -44,10 +50,15 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         style={{
           width: container.width * scale,
           height: container.height * scale,
+          backgroundImage: `linear-gradient(45deg, ${containerColor}10 25%, transparent 25%, transparent 75%, ${containerColor}10 75%, ${containerColor}10), 
+                            linear-gradient(45deg, ${containerColor}10 25%, transparent 25%, transparent 75%, ${containerColor}10 75%, ${containerColor}10)`,
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 10px 10px',
+          boxShadow: `inset 0 0 30px ${containerColor}40`,
         }}
       >
         {/* Container dimensions */}
-        <div className="absolute top-2 left-2 flex items-center gap-1 text-xs bg-background/50 p-1 rounded">
+        <div className="absolute top-2 left-2 flex items-center gap-1 text-xs bg-background/70 p-1 rounded">
           <span>W: {container.width}cm</span>
           <span>×</span>
           <span>D: {container.depth}cm</span>
@@ -89,6 +100,7 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
                     ...itemStyle,
                     backgroundColor: bgColor,
                     opacity: item.isWaste ? 0.5 : 1,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                   }}
                   onClick={() => onItemClick && onItemClick(item)}
                 >
@@ -151,6 +163,26 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
     </div>
   );
 };
+
+// Helper function to get container color based on zone
+function getContainerColor(zone: string): string {
+  switch (zone) {
+    case 'Crew Quarters':
+      return '#4B9CD3'; // Blue
+    case 'Airlock':
+      return '#F59E0B'; // Amber
+    case 'Laboratory':
+      return '#10B981'; // Green
+    case 'Storage Bay':
+      return '#8B5CF6'; // Purple
+    case 'Medical Bay':
+      return '#EF4444'; // Red
+    case 'Command Center':
+      return '#6366F1'; // Indigo
+    default:
+      return '#6B7280'; // Gray
+  }
+}
 
 // Helper function to get a symbol based on item characteristics
 function getItemSymbol(item: CargoItem): string {

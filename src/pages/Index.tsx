@@ -169,14 +169,15 @@ const DashboardContent = () => {
               
               {Object.keys(containersByZone).map(zone => (
                 <TabsContent key={zone} value={zone} className="mt-4">
-                  <ScrollArea className="h-[350px]">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-4">
+                  <ScrollArea className="h-[420px]">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 p-4">
                       {containersByZone[zone].map(container => (
                         <ContainerVisualization
                           key={container.id}
                           container={container}
                           selectedItemId={selectedItemId || undefined}
                           onItemClick={handleItemClick}
+                          className="transform transition-all hover:scale-[1.02]"
                         />
                       ))}
                     </div>
