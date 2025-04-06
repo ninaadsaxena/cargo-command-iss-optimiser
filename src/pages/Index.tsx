@@ -215,6 +215,7 @@ const DashboardContent = () => {
           {selectedItem ? (
             <ItemDetails
               item={selectedItem}
+              containers={simulationState.containers}  {/* Add the missing containers prop */}
               onRetrieve={handleRetrieveItem}
               onMarkAsWaste={handleMarkAsWaste}
               onFindPlacement={handleFindPlacement}
