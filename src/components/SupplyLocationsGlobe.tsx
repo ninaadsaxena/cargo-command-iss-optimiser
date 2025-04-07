@@ -1,11 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supplyLocations } from '@/data/supplyLocations';
 import LocationDetails from '@/components/globe/LocationDetails';
-import { SupplyLocation } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import GlobeVisualization from '@/components/globe/SimplifiedGlobe';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the World component to avoid SSR issues
+const World = dynamic(() => import('@/components/ui/globe').then((m) => m.World), {
+  ssr: false,
+});
 
 const SupplyLocationsGlobe = () => {
   const [activeLocation, setActiveLocation] = useState<string>('ksc');
@@ -40,6 +44,50 @@ const SupplyLocationsGlobe = () => {
     setIsDragging(false);
   };
   
+  // Generate arc data from supply locations
+  const arcData = useMemo(() => {
+    const colors = ["#06b6d4", "#3b82f6", "#6366f1"];
+    
+    return supplyLocations
+      .filter(loc => loc.active)
+      .flatMap((loc, index) => {
+        // Create arcs between this location and the next 2 active locations
+        const activeLocations = supplyLocations.filter(l => l.active && l.id !== loc.id);
+        return activeLocations.slice(0, 2).map((targetLoc, i) => ({
+          order: index + 1,
+          startLat: loc.coordinates[0],
+          startLng: loc.coordinates[1],
+          endLat: targetLoc.coordinates[0],
+          endLng: targetLoc.coordinates[1],
+          arcAlt: 0.2 + (i * 0.1),
+          color: colors[Math.floor(Math.random() * colors.length)],
+        }));
+      });
+  }, []);
+  
+  // Configure the globe
+  const globeConfig = {
+    pointSize: 4,
+    globeColor: "#062056",
+    showAtmosphere: true,
+    atmosphereColor: "#FFFFFF",
+    atmosphereAltitude: 0.1,
+    emissive: "#062056",
+    emissiveIntensity: 0.1,
+    shininess: 0.9,
+    polygonColor: "rgba(255,255,255,0.7)",
+    ambientLight: "#38bdf8",
+    directionalLeftLight: "#ffffff",
+    directionalTopLight: "#ffffff",
+    pointLight: "#ffffff",
+    arcTime: 1000,
+    arcLength: 0.9,
+    rings: 1,
+    maxRings: 3,
+    autoRotate: !isDragging,
+    autoRotateSpeed: 0.5,
+  };
+  
   return (
     <Card className="mt-4">
       <CardHeader className="pb-2">
@@ -61,21 +109,17 @@ const SupplyLocationsGlobe = () => {
         </div>
       </CardHeader>
       <CardContent className="pb-2">
-        <div className="relative w-full h-[300px] overflow-hidden rounded-md border border-slate-200 dark:border-slate-800">
-          <GlobeVisualization 
-            width={800}
-            height={300}
-            lngOffset={lngOffset}
-            activeLocation={activeLocation}
-            locations={supplyLocations}
-            rotating={!isDragging}
-            isDragging={isDragging}
-            onLocationSelect={handleLocationSelect}
-            onStartDrag={handleStartDrag}
-            onDrag={handleDrag}
-            onEndDrag={handleEndDrag}
-            onLeaveDrag={handleLeaveDrag}
-          />
+        <div 
+          className="relative w-full h-[300px] overflow-hidden rounded-md border border-slate-200 dark:border-slate-800"
+          onMouseDown={handleStartDrag}
+          onMouseMove={handleDrag}
+          onMouseUp={handleEndDrag}
+          onMouseLeave={handleLeaveDrag}
+        >
+          <div className="absolute w-full bottom-0 inset-x-0 h-20 bg-gradient-to-b pointer-events-none select-none from-transparent to-black/60 z-40" />
+          <div className="absolute w-full -bottom-20 h-full z-10">
+            <World data={arcData} globeConfig={globeConfig} />
+          </div>
         </div>
         
         {/* Location details for the currently active supply location */}
