@@ -1,11 +1,9 @@
 
 "use client";
-import React from "react";
-import dynamic from "next/dynamic";
+import React, { lazy, Suspense } from "react";
 
-const World = dynamic(() => import("@/components/ui/globe").then((m) => m.World), {
-  ssr: false,
-});
+// Use React's lazy loading instead of Next.js dynamic imports
+const World = lazy(() => import("@/components/ui/globe").then((m) => ({ default: m.World })));
 
 export default function GlobeDemo() {
   const globeConfig = {
@@ -92,7 +90,9 @@ export default function GlobeDemo() {
     <div className="relative w-full h-[400px] overflow-hidden">
       <div className="absolute w-full bottom-0 inset-x-0 h-20 bg-gradient-to-b pointer-events-none select-none from-transparent dark:to-black to-slate-900 z-40" />
       <div className="absolute w-full -bottom-20 h-full z-10">
-        <World data={sampleArcs} globeConfig={globeConfig} />
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Loading...</div>}>
+          <World data={sampleArcs} globeConfig={globeConfig} />
+        </Suspense>
       </div>
     </div>
   );

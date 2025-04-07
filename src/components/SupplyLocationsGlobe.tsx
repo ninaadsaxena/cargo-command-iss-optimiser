@@ -1,15 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supplyLocations } from '@/data/supplyLocations';
 import LocationDetails from '@/components/globe/LocationDetails';
 import { Badge } from '@/components/ui/badge';
-import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
 
-// Dynamically import the World component to avoid SSR issues
-const World = dynamic(() => import('@/components/ui/globe').then((m) => m.World), {
-  ssr: false,
-});
+// Use React's lazy loading instead of Next.js dynamic imports
+const World = lazy(() => import('@/components/ui/globe').then(m => ({ default: m.World })));
 
 const SupplyLocationsGlobe = () => {
   const [activeLocation, setActiveLocation] = useState<string>('ksc');
@@ -118,7 +116,9 @@ const SupplyLocationsGlobe = () => {
         >
           <div className="absolute w-full bottom-0 inset-x-0 h-20 bg-gradient-to-b pointer-events-none select-none from-transparent to-black/60 z-40" />
           <div className="absolute w-full -bottom-20 h-full z-10">
-            <World data={arcData} globeConfig={globeConfig} />
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="animate-spin" /></div>}>
+              <World data={arcData} globeConfig={globeConfig} />
+            </Suspense>
           </div>
         </div>
         
